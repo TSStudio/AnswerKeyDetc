@@ -86,10 +86,10 @@ def get_init_process_img(roi_img):
     img = cv2.GaussianBlur(img, (5, 5), 0)
     ret, img = cv2.threshold(img, 100, 255, cv2.THRESH_BINARY)
     kernel = np.ones((1, 1), np.uint8)
-    img = cv2.erode(img, kernel, iterations=1)
-    img = cv2.dilate(img, kernel, iterations=2)
-    img = cv2.erode(img, kernel, iterations=1)
-    img = cv2.dilate(img, kernel, iterations=2)
+    img = cv2.erode(img, kernel, iterations=2)
+    img = cv2.dilate(img, kernel, iterations=1)
+    img = cv2.erode(img, kernel, iterations=2)
+    img = cv2.dilate(img, kernel, iterations=1)
     img = auto_canny(img)
     return img
 

@@ -11,7 +11,7 @@ CHOICE_COL_COUNT = 12
 CHOICES_PER_QUE = 4
 
 # 每个选项框里面白色点所占比例阈值，小于则说明该选项框可能被填涂
-WHITE_RATIO_PER_CHOICE = 0.5 #0.84
+WHITE_RATIO_PER_CHOICE = 0.4 #0.84
 
 # 受限于环境，光源较差的情况下或腐蚀膨胀参数设置不对，
 # 可能会有误判，这个参数这是比较两个都被识别为涂写的选项框是否有误判的阈值
@@ -33,7 +33,7 @@ ANS_IMG_DILATE_ITERATIONS = 2
 ANS_IMG_ERODE_ITERATIONS = 2
 
 # 识别所涂写区域时的膨胀腐蚀的kernel
-ANS_IMG_KERNEL = np.ones((1, 1), np.uint8)
+ANS_IMG_KERNEL = np.ones((2, 2), np.uint8)
 
 # 识别所有选项框区域时的二值化参数
 CHOICE_IMG_THRESHOLD = (100, 300)
@@ -45,7 +45,7 @@ CHOICE_IMG_DILATE_ITERATIONS = 2
 CHOICE_IMG_ERODE_ITERATIONS = 2
 
 # 识别所有选项框区域时的膨胀腐蚀的kernel
-CHOICE_IMG_KERNEL = np.ones((1, 1), np.uint8)
+CHOICE_IMG_KERNEL = np.ones((2, 2), np.uint8)
 
 # 选项框面积的阈值，超过则认为这个轮廓不是选项框
 CHOICE_MAX_AREA = 6000
