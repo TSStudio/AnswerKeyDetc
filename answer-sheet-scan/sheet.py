@@ -1,5 +1,6 @@
 # coding=utf-8
 import cPickle
+import os
 import cv2
 from imutils import contours
 from e import ContourCountError, ContourPerimeterSizeError, PolyNodeCountError
@@ -51,6 +52,7 @@ def brightness(im_file):
     return stat.mean[0]
 def get_answer_from_sheet(base_img):
 
+    os.path.exists(os.path.curdir)
     #保存最原始图片
     cv2.imwrite('origin.png', base_img)
     # 灰度化然后进行边缘检测、二值化等等一系列处理

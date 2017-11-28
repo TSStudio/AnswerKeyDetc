@@ -54,7 +54,7 @@ CHOICE_MAX_AREA = 6000
 CHOICE_MIN_AREA = 4500
 
 # 总共选项框 + 题号的个数，例如一行3题，总共20列，所以有3 * 20 * 4 + 3 * 20
-CHOICE_CNT_COUNT = 64
+CHOICE_CNT_COUNT = 160
 
 # 调整亮度的竖向分块数目
 PROCESS_BRIGHT_COLS = 18
