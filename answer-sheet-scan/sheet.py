@@ -86,7 +86,7 @@ def get_answer_from_sheet(base_img):
     #ret, ans_img = cv2.threshold(processed_img,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU) #新的方法  
     ans_img = cv2.dilate(processed_img, settings.ANS_IMG_KERNEL, iterations=settings.ANS_IMG_DILATE_ITERATIONS)
     ans_img = cv2.erode(ans_img, settings.ANS_IMG_KERNEL, iterations=settings.ANS_IMG_ERODE_ITERATIONS)
-    ans_img = cv2.adaptiveThreshold(ans_img,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,cv2.THRESH_BINARY,31,3)  
+    ans_img = cv2.adaptiveThreshold(ans_img,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,cv2.THRESH_BINARY,15,1)  
     cv2.imwrite('answer_area.png', ans_img)
     
     # 通过二值化和膨胀腐蚀获得选项框区域
@@ -94,7 +94,7 @@ def get_answer_from_sheet(base_img):
     #ret, choice_img = cv2.threshold(processed_img,0,255,cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)#新方法
     choice_img = cv2.dilate(processed_img, settings.CHOICE_IMG_KERNEL, iterations=settings.CHOICE_IMG_DILATE_ITERATIONS)
     choice_img = cv2.erode(choice_img, settings.CHOICE_IMG_KERNEL, iterations=settings.CHOICE_IMG_ERODE_ITERATIONS)
-    choice_img = cv2.adaptiveThreshold(choice_img,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,cv2.THRESH_BINARY_INV,31,3)
+    choice_img = cv2.adaptiveThreshold(choice_img,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,cv2.THRESH_BINARY_INV,15,1)
     cv2.imwrite('choice_area.png', choice_img)
     #cv2.waitKey(0)
     
