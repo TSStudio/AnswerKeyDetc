@@ -183,7 +183,7 @@ def get_ans(ans_img, rows):
                 if temp_choice['percent'] < settings.WHITE_RATIO_PER_CHOICE:
                     ans_str += temp_choice['choice']
             answer_list.append(ans_str) 
-            #print percent_list
+            print percent_list
                     
             '''
              if percent_list[1]['percent'] < settings.WHITE_RATIO_PER_CHOICE and \

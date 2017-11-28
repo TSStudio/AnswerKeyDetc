@@ -111,9 +111,8 @@ def get_answer_from_sheet(base_img):
     for i,c in enumerate(cnts):
         w = cv2.boundingRect(c)[2]
         h = cv2.boundingRect(c)[3]
-        
         if CHOICE_MIN_AREA < cnts_areas[i]< CHOICE_MAX_AREA \
-           and ((w/h<=1 and h/w <2) or (w/h>1 and w/h <2)):
+            and ((w/h<=1 and h/w <2) or (w/h>1 and w/h <2)):
             question_cnts.append(c)
             print "%d %d" %(w,h)
             
