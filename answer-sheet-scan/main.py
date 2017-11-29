@@ -1,7 +1,6 @@
-import cv2,sys
+import cv2,sys,os
 from sheet import get_answer_from_sheet
 import settings
-
 
 if len(sys.argv) == 5:
     global CHOICES_PER_QUE,CHOICE_COL_COUNT,CHOICE_CNT_COUNT

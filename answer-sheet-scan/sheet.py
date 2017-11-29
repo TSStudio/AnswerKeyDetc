@@ -52,20 +52,25 @@ def brightness(im_file):
     return stat.mean[0]
 def get_answer_from_sheet(base_img):
 
-    os.path.exists(os.path.curdir)
+    filepath,tempfilename = os.path.split(base_img);
+    file_name,_ = os.path.splitext(tempfilename)
+    obj_dir = os.path.curdir + "/img/new/"+ file_name
+    if not os.path.exists(obj_dir):
+        os.makedirs(obj_dir) 
+    base_img = cv2.imread(base_img);
     #保存最原始图片
-    cv2.imwrite('origin.png', base_img)
+    cv2.imwrite(obj_dir+"/"+'origin.png', base_img)
     # 灰度化然后进行边缘检测、二值化等等一系列处理
     img = cv2.cvtColor(base_img, cv2.COLOR_BGR2GRAY)
     img = get_init_process_img(img)
     #写入图片
-    cv2.imwrite('process-0.png', img)
+    cv2.imwrite(obj_dir+"/"+'process-0.png',img)
     # 获取最大面积轮廓并和图片大小作比较，看轮廓周长大小判断是否是答题卡的轮廓
     cnt = get_max_area_cnt(img)
     cnt_perimeter = cv2.arcLength(cnt, True)
     cv2.drawContours(base_img, [cnt], 0, (0, 255, 0), 1)
     #画边框
-    cv2.imwrite('green_border.png', base_img)    
+    cv2.imwrite(obj_dir+"/"+'green_border.png', base_img)    
     base_img_perimeter = (base_img.shape[0] + base_img.shape[1]) * 2
     if not cnt_perimeter > settings.CNT_PERIMETER_THRESHOLD * base_img_perimeter:
         print "边缘丢失"
@@ -78,26 +83,29 @@ def get_answer_from_sheet(base_img):
     processed_img = detect_cnt_again(poly_node_list, base_img)
     #保存纠正图片
     wait_draw = processed_img.copy()
-    cv2.imwrite('correct-position.png', processed_img)
+    cv2.imwrite(obj_dir+"/"+'correct-position.png', processed_img)
     # 调整图片的亮度
     processed_img = get_bright_process_img(processed_img)
-    cv2.imwrite('brighten.png', processed_img)
-
+    cv2.imwrite(obj_dir+"/"+'brighten.png', processed_img)
+    
+    #processed_img = processed_img[processed_img[1]+20:(processed_img[1] + processed_img[3]-20), processed_img[0]+20:(processed_img[0] + processed_img[2]-20)]
     # 通过二值化和膨胀腐蚀获得填涂区域
     #ans_img = cv2.adaptiveThreshold(processed_img,255,cv2.ADAPTIVE_THRESH_MEAN_C,cv2.THRESH_BINARY,35,2)  
     #ret, ans_img = cv2.threshold(processed_img,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU) #新的方法  
-    ans_img = cv2.dilate(processed_img, settings.ANS_IMG_KERNEL, iterations=settings.ANS_IMG_DILATE_ITERATIONS)
-    ans_img = cv2.erode(ans_img, settings.ANS_IMG_KERNEL, iterations=settings.ANS_IMG_ERODE_ITERATIONS)
-    ans_img = cv2.adaptiveThreshold(ans_img,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,cv2.THRESH_BINARY,15,1)  
-    cv2.imwrite('answer_area.png', ans_img)
+    #ans_img = cv2.dilate(processed_img, settings.ANS_IMG_KERNEL, iterations=settings.ANS_IMG_DILATE_ITERATIONS)
+    ans_img = cv2.erode(processed_img, settings.ANS_IMG_KERNEL, iterations=settings.ANS_IMG_ERODE_ITERATIONS) 
+    ans_img = cv2.adaptiveThreshold(ans_img,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,cv2.THRESH_BINARY,45,1) 
+    cv2.imwrite(obj_dir+"/"+'answer_area.png', ans_img)
     
     # 通过二值化和膨胀腐蚀获得选项框区域
     #choice_img = cv2.adaptiveThreshold(processed_img,255,cv2.ADAPTIVE_THRESH_MEAN_C,cv2.THRESH_BINARY_INV,35,2) 
     #ret, choice_img = cv2.threshold(processed_img,0,255,cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)#新方法
-    choice_img = cv2.dilate(processed_img, settings.CHOICE_IMG_KERNEL, iterations=settings.CHOICE_IMG_DILATE_ITERATIONS)
-    choice_img = cv2.erode(choice_img, settings.CHOICE_IMG_KERNEL, iterations=settings.CHOICE_IMG_ERODE_ITERATIONS)
-    choice_img = cv2.adaptiveThreshold(choice_img,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,cv2.THRESH_BINARY_INV,15,1)
-    cv2.imwrite('choice_area.png', choice_img)
+    #choice_img = cv2.dilate(processed_img, settings.CHOICE_IMG_KERNEL, iterations=settings.CHOICE_IMG_DILATE_ITERATIONS)
+    choice_img = cv2.erode(processed_img, settings.CHOICE_IMG_KERNEL, iterations=settings.CHOICE_IMG_ERODE_ITERATIONS)
+    choice_img = cv2.adaptiveThreshold(processed_img,255,cv2.ADAPTIVE_THRESH_MEAN_C,cv2.THRESH_BINARY_INV,21,2)
+    #choice_img = cv2.morphologyEx(choice_img,cv2.MORPH_GRADIENT,settings.ANS_IMG_KERNEL)
+   
+    cv2.imwrite(obj_dir+"/"+'choice_area.png', choice_img)
     #cv2.waitKey(0)
     
     # 查找选项框以及前面题号的轮廓
@@ -116,13 +124,13 @@ def get_answer_from_sheet(base_img):
         if CHOICE_MIN_AREA < cnts_areas[i]< CHOICE_MAX_AREA \
             and ((w/h<=1 and h/w <2) or (w/h>1 and w/h <2)):
             question_cnts.append(c)
-            print "%d %d" %(w,h)
+        print "%d %d" %(w,h)
             
         
     cv2.drawContours(wait_draw, question_cnts, -1, (0, 0, 255), 1)
     cv2.imshow("img", wait_draw)  
     cv2.waitKey(0)
-    cv2.imwrite('wait_draw5.png', wait_draw)
+    cv2.imwrite(obj_dir+"/"+'wait_draw5.png', wait_draw)
     cv2.waitKey(0)    
     
     if len(question_cnts) != settings.CHOICE_CNT_COUNT:

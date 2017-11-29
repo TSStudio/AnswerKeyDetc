@@ -1,12 +1,13 @@
 from sheet import get_answer_from_sheet
-import cv2,math
+import cv2,math,os
 
 import time
 
 start = time.clock()
 
-base_img = cv2.imread('img/new/0004.jpg')
-get_answer_from_sheet(base_img)
+image_name = "0010.jpg"; ##0006 0007 
+
+get_answer_from_sheet("img/new/"+image_name);
 end = time.clock()
 print "get_answer_from_sheet: %f s" % (end - start)
 
