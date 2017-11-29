@@ -42,10 +42,10 @@ CHOICE_IMG_THRESHOLD = (100, 300)
 CHOICE_IMG_DILATE_ITERATIONS = 2
 
 # 识别所有选项框区域时的腐蚀参数
-CHOICE_IMG_ERODE_ITERATIONS = 4
+CHOICE_IMG_ERODE_ITERATIONS = 6
 
 # 识别所有选项框区域时的膨胀腐蚀的kernel
-CHOICE_IMG_KERNEL = np.ones((4, 4), np.uint8)
+CHOICE_IMG_KERNEL = np.ones((10, 10), np.uint8)
 
 # 选项框面积的阈值，超过则认为这个轮廓不是选项框
 CHOICE_MAX_AREA = 6000
@@ -54,7 +54,7 @@ CHOICE_MAX_AREA = 6000
 CHOICE_MIN_AREA = 4500
 
 # 总共选项框 + 题号的个数，例如一行3题，总共20列，所以有3 * 20 * 4 + 3 * 20
-CHOICE_CNT_COUNT = 64
+CHOICE_CNT_COUNT = 68
 
 # 调整亮度的竖向分块数目
 PROCESS_BRIGHT_COLS = 18

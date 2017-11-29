@@ -42,7 +42,7 @@ def get_choice_area(areas):
     for array in segments:
         if len(array) > len(temp) or len(temp)> 250:#小于250
             temp = array
-    return temp[0]-50,temp[-1]+50
+    return temp[0]-60,temp[-1]+60
 
 
 
@@ -102,7 +102,7 @@ def get_answer_from_sheet(base_img):
     #ret, choice_img = cv2.threshold(processed_img,0,255,cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)#新方法
     #choice_img = cv2.dilate(processed_img, settings.CHOICE_IMG_KERNEL, iterations=settings.CHOICE_IMG_DILATE_ITERATIONS)
     choice_img = cv2.erode(processed_img, settings.CHOICE_IMG_KERNEL, iterations=settings.CHOICE_IMG_ERODE_ITERATIONS)
-    choice_img = cv2.adaptiveThreshold(processed_img,255,cv2.ADAPTIVE_THRESH_MEAN_C,cv2.THRESH_BINARY_INV,21,2)
+    choice_img = cv2.adaptiveThreshold(processed_img,255,cv2.ADAPTIVE_THRESH_MEAN_C,cv2.THRESH_BINARY_INV,23,2)
     #choice_img = cv2.morphologyEx(choice_img,cv2.MORPH_GRADIENT,settings.ANS_IMG_KERNEL)
    
     cv2.imwrite(obj_dir+"/"+'choice_area.png', choice_img)
@@ -124,7 +124,7 @@ def get_answer_from_sheet(base_img):
         if CHOICE_MIN_AREA < cnts_areas[i]< CHOICE_MAX_AREA \
             and ((w/h<=1 and h/w <2) or (w/h>1 and w/h <2)):
             question_cnts.append(c)
-        print "%d %d" %(w,h)
+            print "%d %d" %(w,h)
             
         
     cv2.drawContours(wait_draw, question_cnts, -1, (0, 0, 255), 1)

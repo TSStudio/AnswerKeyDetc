@@ -5,7 +5,7 @@ import time
 
 start = time.clock()
 
-image_name = "0010.jpg"; ##0006 0007 
+image_name = "0013.jpg"; ##0006 0007 
 
 get_answer_from_sheet("img/new/"+image_name);
 end = time.clock()
