@@ -102,7 +102,7 @@ def get_answer_from_sheet(base_img):
     #ret, choice_img = cv2.threshold(processed_img,0,255,cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)#新方法
     #choice_img = cv2.dilate(processed_img, settings.CHOICE_IMG_KERNEL, iterations=settings.CHOICE_IMG_DILATE_ITERATIONS)
     choice_img = cv2.erode(processed_img, settings.CHOICE_IMG_KERNEL, iterations=settings.CHOICE_IMG_ERODE_ITERATIONS)
-    choice_img = cv2.adaptiveThreshold(processed_img,255,cv2.ADAPTIVE_THRESH_MEAN_C,cv2.THRESH_BINARY_INV,23,2)
+    choice_img = cv2.adaptiveThreshold(processed_img,255,cv2.ADAPTIVE_THRESH_MEAN_C,cv2.THRESH_BINARY_INV,11,2)
     #choice_img = cv2.morphologyEx(choice_img,cv2.MORPH_GRADIENT,settings.ANS_IMG_KERNEL)
    
     cv2.imwrite(obj_dir+"/"+'choice_area.png', choice_img)
@@ -110,7 +110,10 @@ def get_answer_from_sheet(base_img):
     
     # 查找选项框以及前面题号的轮廓
     cnts, h = cv2.findContours(choice_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
+    
+    #cnts = []
+    #for c in cnt1s:
+    #    cnts.append(cv2.approxPolyDP(cnt, cv2.arcLength(cnt, True) * 0.1, True))
     question_cnts = []
     cnts_areas = []
     for i,c in enumerate(cnts):
@@ -124,7 +127,8 @@ def get_answer_from_sheet(base_img):
         if CHOICE_MIN_AREA < cnts_areas[i]< CHOICE_MAX_AREA \
             and ((w/h<=1 and h/w <2) or (w/h>1 and w/h <2)):
             question_cnts.append(c)
-            print "%d %d" %(w,h)
+            #print c;
+            #print "%d %d" %(w,h)
             
         
     cv2.drawContours(wait_draw, question_cnts, -1, (0, 0, 255), 1)
@@ -136,9 +140,10 @@ def get_answer_from_sheet(base_img):
     if len(question_cnts) != settings.CHOICE_CNT_COUNT:
         print "数目错误 %d %d" %(len(question_cnts),settings.CHOICE_CNT_COUNT)
         exit()    
-
-    # 对轮廓之上而下的排序
+    #对轮廓之上而下的排序
+    question_cnts, cnts_pos = contours.sort_contours(question_cnts, method="left-to-right")
     question_cnts, cnts_pos = contours.sort_contours(question_cnts, method="top-to-bottom")
+   
     rows = sort_by_row_hs(list(cnts_pos))
     get_ans(ans_img, rows)
 

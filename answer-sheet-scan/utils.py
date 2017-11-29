@@ -177,6 +177,11 @@ def get_ans(ans_img, rows):
                 percent_list.append({'col': k + 1, 'row': i + 1, 'percent': percent, 'choice': settings.CHOICES[j]})
 
             #percent_list.sort(key=lambda x: x['percent'])
+            temp_percent_list = percent_list[:];
+            temp_percent_list.sort(key=lambda x: x['percent'])
+            for i,x in enumerate(temp_percent_list[1:]):
+                if temp_percent_list[i]['percent'] - x['percent'] > 0.2 :
+                    settings.WHITE_RATIO_PER_CHOICE = x['percent'] + 0.01
             choice_pos_n_ans = (percent_list[0]['row'], percent_list[0]['col'], percent_list[0]['choice'])
             choice_pos = (percent_list[0]['row'], percent_list[0]['col'])
             ans_str = ""
@@ -232,15 +237,49 @@ def get_choice_row_count():
 def sort_by_row_hs(cnts_pos):
     choice_row_count = get_choice_row_count()
     count = 0
-    rows = []
-    threshold = get_min_row_interval(cnts_pos)
-    for i in range(choice_row_count):
+    threshold = get_min_row_interval(cnts_pos);
+    
+    min_left = min(cnts_pos, key=lambda x: x[0])[0]
+    max_right = max(cnts_pos, key=lambda x: x[0])[0]
+    min_top = min(cnts_pos, key=lambda x: x[1])[1]
+    max_top = max(cnts_pos, key=lambda x: x[1])[1]
+    ave_width = 0
+    ave_height = 0
+    for pos in cnts_pos:
+        ave_height+=pos[2]
+        ave_height+=pos[3]
+    ave_height = ave_height/count(cnts_pos)
+    ave_width = ave_width/count(cnts_pos)
+    
+    #cur_row = 1;
+    
+    my_rows = []
+    row = []
+    
+    
+    for i,pos in enumerate(cnts_pos):            
+        while abs(cnts_pos[i][0]-pos[0]) < 5:
+            row.append(cnts_pos[i])
+        if abs(cnts_pos[i][0]-pos[0]) >= 5:
+            row.append(cnts_pos[i])
+            #检测一行数据和与预计每行数据相等，直接读取下一行,不进行校验
+            if count(row) == choice_row_count:
+                my_rows.append(row)
+            #不一致也可能是最后一行不足一行，应该做减法判断
+            elif set.CHOICE_CNT_COUNT- count(my_rows)*choice_row_count == count(row):
+                my_rows.append(row)
+                      
+        
+        
+    #for i,pos in enumerate(cnts_pos[1:]):
+    #    if (pos[i] - cnts_pos[])  
+        
+    for i in (choice_row_count):
         cols = cnts_pos[i * settings.CHOICE_COL_COUNT - count:(i + 1) * settings.CHOICE_COL_COUNT - count]
-        # threshold = _std_plus_mean(cols)
         temp_row = [cols[0]]
         for j, col in enumerate(cols[1:]):
             temp_row.append(col)
-        count += settings.CHOICE_COL_COUNT - len(temp_row)
+        #count += settings.CHOICE_COL_COUNT - len(temp_row)
         temp_row.sort(key=lambda x: x[0])
         rows.append(temp_row)
 
