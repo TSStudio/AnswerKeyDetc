@@ -42,10 +42,10 @@ CHOICE_IMG_THRESHOLD = (100, 300)
 CHOICE_IMG_DILATE_ITERATIONS = 2
 
 # 识别所有选项框区域时的腐蚀参数
-CHOICE_IMG_ERODE_ITERATIONS = 6
+CHOICE_IMG_ERODE_ITERATIONS = 4
 
 # 识别所有选项框区域时的膨胀腐蚀的kernel
-CHOICE_IMG_KERNEL = np.ones((10, 10), np.uint8)
+CHOICE_IMG_KERNEL = np.ones((5, 5), np.uint8)
 
 # 选项框面积的阈值，超过则认为这个轮廓不是选项框
 CHOICE_MAX_AREA = 6000
