@@ -235,46 +235,73 @@ def get_choice_row_count():
 
 
 def sort_by_row_hs(cnts_pos):
-    choice_row_count = get_choice_row_count()
-    count = 0
-    threshold = get_min_row_interval(cnts_pos);
     
+    #1.计算边界的值
     min_left = min(cnts_pos, key=lambda x: x[0])[0]
     max_right = max(cnts_pos, key=lambda x: x[0])[0]
     min_top = min(cnts_pos, key=lambda x: x[1])[1]
     max_top = max(cnts_pos, key=lambda x: x[1])[1]
+    
     ave_width = 0
-    ave_height = 0
-    for pos in cnts_pos:
+    ave_height = 0    
+    for i,pos in enumerate(cnts_pos[1:]):
         ave_height+=pos[2]
         ave_height+=pos[3]
     ave_height = ave_height/count(cnts_pos)
     ave_width = ave_width/count(cnts_pos)
     
+    #2.将矩形按照一条龙放入队列
+    queues = []
+    temp_row = [cnts_pos[0]]
+    choice_maigin_x = 0
+    question_margin_x = 0
+    choice_maigin_y = 0
+    qmx_cnt = 0
+    cmx_cnt = 0    
+    for i,pos  in enumerate(cnts_pos[1:]):
+        if abs(pos[1] - cnts_pos[i][1])<5:
+            temp_row.append(pos)
+        else:
+            temp_row = sorted(temp_row,key=lambda x:x[0])
+            if count(temp_row) == choice_row_count:#统计边界间距
+                for i,pos in enumerate(temp_row[1:]):
+                    if (i+1) % settings.CHOICES_PER_QUE == 0 :#两个选择题的边界
+                        question_margin_x += pos[0]-temp_row[i][0]-temp_row[i][2]
+                        qmx_cnt += 1
+                    else:
+                        cmx_cnt += 1
+                        choice_margin_x += pos[0]-temp_row[i][0]-temp_row[i][2]
+                
+            queues.extend(temp_row)
+            temp_row = [pos]
+            
+    choice_margin_x = choice_margin_x/cmx_cnt
+    question_margin_x = question_margin_x/qmx_cnt
+    
+    queues.extend(temp_row)   
+    choice_row_count = get_choice_row_count()
+    count = 0
+    
+    #3.对队列里面的值有效性和完整性进行判断和修复
+    final_queue = []
+    first_cell = queues[1]
+    if abs(first_cell[0]-min_left)<5 and abs(first_cell[1]-min_top)<5\
+       and abs(first_cell[2]-ave_width)<5 and abs(first_cell[3]-ave_height)<5:
+        final_queue = [first_cell]
+    else:
+        final_queue = [(min_left,min_top,ave_width,ave_height)] #自己补全第一个
+    for i,pos in enumerate(queues[1:]):
+        if i % choice_row_count == 0：
+        
     #cur_row = 1;
     
-    my_rows = []
-    row = []
-    
-    
-    for i,pos in enumerate(cnts_pos):            
-        while abs(cnts_pos[i][0]-pos[0]) < 5:
-            row.append(cnts_pos[i])
-        if abs(cnts_pos[i][0]-pos[0]) >= 5:
-            row.append(cnts_pos[i])
-            #检测一行数据和与预计每行数据相等，直接读取下一行,不进行校验
-            if count(row) == choice_row_count:
-                my_rows.append(row)
-            #不一致也可能是最后一行不足一行，应该做减法判断
-            elif set.CHOICE_CNT_COUNT- count(my_rows)*choice_row_count == count(row):
-                my_rows.append(row)
+
+       
+
                       
         
-        
-    #for i,pos in enumerate(cnts_pos[1:]):
-    #    if (pos[i] - cnts_pos[])  
-        
-    for i in (choice_row_count):
+    '''
+     for i in (choice_row_count):
         cols = cnts_pos[i * settings.CHOICE_COL_COUNT - count:(i + 1) * settings.CHOICE_COL_COUNT - count]
         temp_row = [cols[0]]
         for j, col in enumerate(cols[1:]):
@@ -282,6 +309,11 @@ def sort_by_row_hs(cnts_pos):
         #count += settings.CHOICE_COL_COUNT - len(temp_row)
         temp_row.sort(key=lambda x: x[0])
         rows.append(temp_row)
+
+    '''    
+
+        
+   
 
     # insert_no_full_row(rows)
 
