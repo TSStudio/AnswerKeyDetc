@@ -232,8 +232,27 @@ def delete_rect(cents_pos, que_cnts):
 def get_choice_row_count():
     choice_row_count = int(math.ceil(settings.CHOICE_CNT_COUNT * 1.0 / settings.CHOICE_COL_COUNT))
     return choice_row_count
-
-
+#中位数
+def get_median(data):
+    data = sorted(data)
+    size = len(data)
+    if size % 2 == 0: # 判断列表长度为偶数
+        median = (data[size//2]+data[size//2-1])/2
+        data[0] = median
+    if size % 2 == 1: # 判断列表长度为奇数
+        median = data[(size-1)//2]
+        data[0] = median
+    return data[0]
+def checkRect(rect1,rect2):
+    if abs(rect1[0]-rect2[0]) < 5 and abs(rect1[1] - rect2[2]) < 5 and abs( \
+        rect1[2] - rect2[2])<5 and abs(rect1[3]-rect2[3])<5: #位置和大小都匹配
+        return 1
+    elif abs(rect1[2]-rect2[2]) < 5 and abs(rect1[3]- rect2[3])< 5 and abs(\
+        rect1[1]-rect2[1])<5:# 在同一个水平线上，但是间距不对，中间可能有遗漏
+        return 2
+    else:
+        return 3
+    
 def sort_by_row_hs(cnts_pos):
     
     #1.计算边界的值
@@ -241,83 +260,60 @@ def sort_by_row_hs(cnts_pos):
     max_right = max(cnts_pos, key=lambda x: x[0])[0]
     min_top = min(cnts_pos, key=lambda x: x[1])[1]
     max_top = max(cnts_pos, key=lambda x: x[1])[1]
-    
-    ave_width = 0
-    ave_height = 0    
-    for i,pos in enumerate(cnts_pos[1:]):
-        ave_height+=pos[2]
-        ave_height+=pos[3]
-    ave_height = ave_height/count(cnts_pos)
-    ave_width = ave_width/count(cnts_pos)
+
     
     #2.将矩形按照一条龙放入队列
     queues = []
     temp_row = [cnts_pos[0]]
-    choice_maigin_x = 0
-    question_margin_x = 0
-    choice_maigin_y = 0
-    qmx_cnt = 0
-    cmx_cnt = 0    
+    choice_maigins = []
+    question_margins = []
+    choice_maigin_y= []
+    
     for i,pos  in enumerate(cnts_pos[1:]):
         if abs(pos[1] - cnts_pos[i][1])<5:
             temp_row.append(pos)
         else:
             temp_row = sorted(temp_row,key=lambda x:x[0])
-            if count(temp_row) == choice_row_count:#统计边界间距
-                for i,pos in enumerate(temp_row[1:]):
-                    if (i+1) % settings.CHOICES_PER_QUE == 0 :#两个选择题的边界
-                        question_margin_x += pos[0]-temp_row[i][0]-temp_row[i][2]
-                        qmx_cnt += 1
+            if len(temp_row) == settings.CHOICE_COL_COUNT:#统计边界间距
+                for j,pos2 in enumerate(temp_row[1:]):
+                    if (j+1) % settings.CHOICES_PER_QUE == 0 and (j+1) < settings.CHOICE_COL_COUNT:#(两个选择题的边界
+                        question_margins.append(pos2[0]-temp_row[j][0]-temp_row[j][2])
                     else:
-                        cmx_cnt += 1
-                        choice_margin_x += pos[0]-temp_row[i][0]-temp_row[i][2]
-                
+                        choice_maigins.append(pos2[0]-temp_row[j][0]-temp_row[j][2])
             queues.extend(temp_row)
             temp_row = [pos]
-            
-    choice_margin_x = choice_margin_x/cmx_cnt
-    question_margin_x = question_margin_x/qmx_cnt
-    
-    queues.extend(temp_row)   
-    choice_row_count = get_choice_row_count()
-    count = 0
-    
+            choice_maigin_y.append(pos[1]-cnts_pos[i][1])
+    queues.extend(temp_row) 
+    # 选项之间左右的间距，题目之间左右的间距，选项之间的上下间距        
+    choice_margin_x = get_median(choice_maigins)
+    question_margin_x = get_median(question_margins)
+    question_margin_y = get_median(choice_maigin_y)
+    #宽度和高度
+    cell_height = get_median([x[2] for x in queues])
+    cell_width = get_median([x[3] for x in queues])
     #3.对队列里面的值有效性和完整性进行判断和修复
     final_queue = []
     first_cell = queues[1]
-    if abs(first_cell[0]-min_left)<5 and abs(first_cell[1]-min_top)<5\
-       and abs(first_cell[2]-ave_width)<5 and abs(first_cell[3]-ave_height)<5:
+    
+    if checkRect(first_cell, (min_left,min_top,cell_width,cell_height)) == 1:
         final_queue = [first_cell]
     else:
-        final_queue = [(min_left,min_top,ave_width,ave_height)] #自己补全第一个
+        final_queue = [(min_left,min_top,cell_width,cell_height)] #自己补全第一个
     for i,pos in enumerate(queues[1:]):
-        if i % choice_row_count == 0：
-        
-    #cur_row = 1;
-    
-
-       
-
-                      
-        
-    '''
-     for i in (choice_row_count):
-        cols = cnts_pos[i * settings.CHOICE_COL_COUNT - count:(i + 1) * settings.CHOICE_COL_COUNT - count]
-        temp_row = [cols[0]]
-        for j, col in enumerate(cols[1:]):
-            temp_row.append(col)
-        #count += settings.CHOICE_COL_COUNT - len(temp_row)
-        temp_row.sort(key=lambda x: x[0])
-        rows.append(temp_row)
-
-    '''    
-
-        
-   
-
-    # insert_no_full_row(rows)
-
-    return rows
+        last_rect = final_queue[-1]#取队列里面倒数第一个
+        if (i+1) % settings.CHOICE_COL_COUNT == 1:# 一行第一个元素
+            expect_rect = (min_left,last_rect[1]+question_margin_y+cell_height,cell_width,cell_height) #预估计矩形
+        if (i+1) % settings.CHOICES_PER_QUE == 0 and (i+1) < settings.CHOICES_PER_QUE : # 相邻的问题
+            expect_rect = (last_rect[0]+last_rect[2]+question_margin_x,last_rect[1],cell_width,cell_height) #预估计矩形 
+        else:
+            expect_rect = (last_rect[0]+last_rect[2]+choice_margin_x,last_rect[1],cell_width,cell_height)
+        check_result = checkRect(expect_rect,pos)    
+        if check_result == 1 or check_result == 3:
+            final_queue.append(pos)
+        elif check_result == 2:
+            final_queue.append(expect_rect)
+            final_queue.append(pos)   
+    return final_queue
 
 def sort_by_col(cnts_pos):
     # TODO
