@@ -243,23 +243,55 @@ def get_median(data):
         median = data[(size-1)//2]
         data[0] = median
     return data[0]
+def get_ave(data):
+    sum = 0
+    for x in data:
+        sum += x;
+    return sum / len(data) 
+
 def checkRect(rect1,rect2):
-    if abs(rect1[0]-rect2[0]) < 5 and abs(rect1[1] - rect2[2]) < 5 and abs( \
-        rect1[2] - rect2[2])<5 and abs(rect1[3]-rect2[3])<5: #位置和大小都匹配
+    th = 6
+    if abs(rect1[0]-rect2[0]) < th and abs(rect1[1] - rect2[1]) < th*1.5 and abs( \
+        rect1[2] - rect2[2])<th and abs(rect1[3]-rect2[3])<th: #位置和大小都匹配
+        print 1
         return 1
-    elif abs(rect1[2]-rect2[2]) < 5 and abs(rect1[3]- rect2[3])< 5 and abs(\
-        rect1[1]-rect2[1])<5:# 在同一个水平线上，但是间距不对，中间可能有遗漏
+    elif abs(rect1[2]-rect2[2]) < th and abs(rect1[3]- rect2[3])< th and abs(\
+        rect1[1]-rect2[1])<th:# 在同一个水平线上，但是间距不对，中间可能有遗漏
+        print 2
         return 2
     else:
+        print 3
         return 3
     
+
 def sort_by_row_hs(cnts_pos):
+    choice_row_count = get_choice_row_count()
+    count = 0
+    rows = []
+    print type(cnts_pos[0])
+    threshold = get_min_row_interval(cnts_pos)
+    for i in range(choice_row_count):
+        cols = cnts_pos[i * settings.CHOICE_COL_COUNT - count:(i + 1) * settings.CHOICE_COL_COUNT - count]
+        # threshold = _std_plus_mean(cols)
+        temp_row = [cols[0]]
+        for j, col in enumerate(cols[1:]):
+            temp_row.append(col)
+        count += settings.CHOICE_COL_COUNT - len(temp_row)
+        temp_row.sort(key=lambda x: x[0])
+        rows.append(temp_row)
+
+    # insert_no_full_row(rows)
+
+    return rows   
+
+    
+def sort_by_row_hs2(cnts_pos):
     
     #1.计算边界的值
-    min_left = min(cnts_pos, key=lambda x: x[0])[0]
-    max_right = max(cnts_pos, key=lambda x: x[0])[0]
-    min_top = min(cnts_pos, key=lambda x: x[1])[1]
-    max_top = max(cnts_pos, key=lambda x: x[1])[1]
+    min_left = min(cnts_pos, key=lambda x: x[0])[0]+5
+    max_right = max(cnts_pos, key=lambda x: x[0])[0]-5
+    min_top = min(cnts_pos, key=lambda x: x[1])[1]+5
+    max_top = max(cnts_pos, key=lambda x: x[1])[1]-5
 
     
     #2.将矩形按照一条龙放入队列
@@ -281,39 +313,62 @@ def sort_by_row_hs(cnts_pos):
                     else:
                         choice_maigins.append(pos2[0]-temp_row[j][0]-temp_row[j][2])
             queues.extend(temp_row)
-            temp_row = [pos]
-            choice_maigin_y.append(pos[1]-cnts_pos[i][1])
+            temp_row = [pos] ## 不一定是第一个因为没有排序
+            choice_maigin_y.append(pos[1]-queues[-1][1])
     queues.extend(temp_row) 
     # 选项之间左右的间距，题目之间左右的间距，选项之间的上下间距        
-    choice_margin_x = get_median(choice_maigins)
-    question_margin_x = get_median(question_margins)
-    question_margin_y = get_median(choice_maigin_y)
+    choice_margin_x =  get_ave(choice_maigins)#get_median(choice_maigins)
+    question_margin_x = get_ave(question_margins) #get_median(question_margins)
+    question_margin_y = get_ave(choice_maigin_y)#get_median(choice_maigin_y)
     #宽度和高度
-    cell_height = get_median([x[2] for x in queues])
-    cell_width = get_median([x[3] for x in queues])
+    cell_height = get_ave([x[3] for x in queues])
+    cell_width = get_ave([x[2] for x in queues])
     #3.对队列里面的值有效性和完整性进行判断和修复
-    final_queue = []
-    first_cell = queues[1]
     
+    final_rows = []
+    first_cell = queues[0]
     if checkRect(first_cell, (min_left,min_top,cell_width,cell_height)) == 1:
         final_queue = [first_cell]
     else:
         final_queue = [(min_left,min_top,cell_width,cell_height)] #自己补全第一个
     for i,pos in enumerate(queues[1:]):
         last_rect = final_queue[-1]#取队列里面倒数第一个
-        if (i+1) % settings.CHOICE_COL_COUNT == 1:# 一行第一个元素
-            expect_rect = (min_left,last_rect[1]+question_margin_y+cell_height,cell_width,cell_height) #预估计矩形
-        if (i+1) % settings.CHOICES_PER_QUE == 0 and (i+1) < settings.CHOICES_PER_QUE : # 相邻的问题
+        if (i+1) % settings.CHOICE_COL_COUNT == 0 and i > 1:# 一行第一个元素
+            print '----' + str(i)
+            expect_rect = (min_left,last_rect[1]+question_margin_y,cell_width,cell_height) #预估计矩形
+        elif (i+1) % settings.CHOICES_PER_QUE == 0 and (i+1) < settings.CHOICE_COL_COUNT : # 相邻的问题
+            print '======' + str(i)
             expect_rect = (last_rect[0]+last_rect[2]+question_margin_x,last_rect[1],cell_width,cell_height) #预估计矩形 
         else:
+            print '-=-=-=' + str(i)
             expect_rect = (last_rect[0]+last_rect[2]+choice_margin_x,last_rect[1],cell_width,cell_height)
         check_result = checkRect(expect_rect,pos)    
         if check_result == 1 or check_result == 3:
             final_queue.append(pos)
         elif check_result == 2:
             final_queue.append(expect_rect)
-            final_queue.append(pos)   
-    return final_queue
+            final_queue.append(pos) 
+    if len(final_queue) != settings.CHOICE_CNT_COUNT:
+        print "题目数量检测错误"
+        exit
+    ##对最后的队列进行分行
+   
+    choice_row_count = get_choice_row_count()
+    count = 0
+    rows = []
+    #print type(cnts_pos[0])
+    threshold = get_min_row_interval(final_queue)
+    for i in range(choice_row_count):
+        cols = final_queue[i * settings.CHOICE_COL_COUNT - count:(i + 1) * settings.CHOICE_COL_COUNT - count]
+        # threshold = _std_plus_mean(cols)
+        temp_row = [cols[0]]
+        for j, col in enumerate(cols[1:]):
+            temp_row.append(col)
+        count += settings.CHOICE_COL_COUNT - len(temp_row)
+        temp_row.sort(key=lambda x: x[0])
+        rows.append(temp_row)    
+    return rows
+
 
 def sort_by_col(cnts_pos):
     # TODO

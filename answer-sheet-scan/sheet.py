@@ -9,7 +9,7 @@ import settings
 #from settings import ANS_IMG_THRESHOLD, CNT_PERIMETER_THRESHOLD, CHOICE_IMG_THRESHOLD, ANS_IMG_DILATE_ITERATIONS, \
 #    ANS_IMG_ERODE_ITERATIONS, CHOICE_IMG_DILATE_ITERATIONS, CHOICE_IMG_ERODE_ITERATIONS, CHOICE_MAX_AREA, \
     #CHOICE_CNT_COUNT, ANS_IMG_KERNEL, CHOICE_IMG_KERNEL, CHOICE_MIN_AREA
-from utils import detect_cnt_again, get_init_process_img, get_bright_process_img, get_max_area_cnt, get_ans,sort_by_row_hs
+from utils import detect_cnt_again, get_init_process_img, get_bright_process_img, get_max_area_cnt, get_ans,sort_by_row_hs,sort_by_row_hs2
 
 '''
 def get_choice_area(areas):
@@ -137,14 +137,14 @@ def get_answer_from_sheet(base_img):
     cv2.imwrite(obj_dir+"/"+'wait_draw5.png', wait_draw)
     cv2.waitKey(0)    
     
-    if len(question_cnts) != settings.CHOICE_CNT_COUNT:
-        print "数目错误 %d %d" %(len(question_cnts),settings.CHOICE_CNT_COUNT)
-        exit()    
+    #if len(question_cnts) != settings.CHOICE_CNT_COUNT:
+    #    print "数目错误 %d %d" %(len(question_cnts),settings.CHOICE_CNT_COUNT)
+    #    exit()    
     #对轮廓之上而下的排序
     question_cnts, cnts_pos = contours.sort_contours(question_cnts, method="left-to-right")
     question_cnts, cnts_pos = contours.sort_contours(question_cnts, method="top-to-bottom")
    
-    rows = sort_by_row_hs(list(cnts_pos))
+    rows = sort_by_row_hs2(list(cnts_pos))
     get_ans(ans_img, rows)
 
    
