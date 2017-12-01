@@ -180,8 +180,8 @@ def get_ans(ans_img, rows):
             temp_percent_list = percent_list[:];
             temp_percent_list.sort(key=lambda x: x['percent'])
             for i,x in enumerate(temp_percent_list[1:]):
-                if temp_percent_list[i]['percent'] - x['percent'] > 0.18 :
-                    settings.WHITE_RATIO_PER_CHOICE = x['percent'] + 0.01
+                if x['percent'] - temp_percent_list[i]['percent'] > 0.25 :
+                    settings.WHITE_RATIO_PER_CHOICE = x['percent'] - 0.01
             choice_pos_n_ans = (percent_list[0]['row'], percent_list[0]['col'], percent_list[0]['choice'])
             choice_pos = (percent_list[0]['row'], percent_list[0]['col'])
             ans_str = ""
