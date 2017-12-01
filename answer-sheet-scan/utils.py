@@ -86,11 +86,11 @@ def get_init_process_img(roi_img):
     img = cv2.convertScaleAbs(img)
     img = cv2.GaussianBlur(img, (5, 5), 0)
     ret, img = cv2.threshold(img, 100, 255, cv2.THRESH_BINARY)
-    kernel = np.ones((1, 1), np.uint8)
+    kernel = np.ones((2, 2), np.uint8)
     img = cv2.erode(img, kernel, iterations=2)
-    img = cv2.dilate(img, kernel, iterations=1)
+    img = cv2.dilate(img, kernel, iterations=2)
     img = cv2.erode(img, kernel, iterations=2)
-    img = cv2.dilate(img, kernel, iterations=1)
+    img = cv2.dilate(img, kernel, iterations=2)
     img = auto_canny(img)
     return img
 
@@ -159,9 +159,10 @@ def get_ans(ans_img, rows):
 
     items_per_row = get_items_per_row()
     answer_list = []
+    stand_th = 0
+    last_white = 0;
     for i, row in enumerate(rows):
         # 从左到右为当前题目的气泡轮廓排序，然后初始化被涂画的气泡变量
-   
         for k in range(len(row)/settings.CHOICES_PER_QUE):
             #print '======================================='
             percent_list = []
@@ -179,31 +180,25 @@ def get_ans(ans_img, rows):
             #percent_list.sort(key=lambda x: x['percent'])
             temp_percent_list = percent_list[:];
             temp_percent_list.sort(key=lambda x: x['percent'])
-            for i,x in enumerate(temp_percent_list[1:]):
-                if x['percent'] - temp_percent_list[i]['percent'] > 0.25 :
-                    settings.WHITE_RATIO_PER_CHOICE = x['percent'] - 0.01
+            temp_percent_list.reverse()
+            
             choice_pos_n_ans = (percent_list[0]['row'], percent_list[0]['col'], percent_list[0]['choice'])
             choice_pos = (percent_list[0]['row'], percent_list[0]['col'])
             ans_str = ""
+            for i,x in enumerate(temp_percent_list[1:]):
+                if temp_percent_list[i]['percent'] - x['percent'] > 0.04: 
+                    if stand_th == 0:
+                        stand_th = temp_percent_list[i]['percent']#标准的没有填涂
+                    settings.WHITE_RATIO_PER_CHOICE = x['percent']+0.01
+                    if last_white == 0 or abs(settings.WHITE_RATIO_PER_CHOICE-last_white) < 0.02:
+                        last_white = settings.WHITE_RATIO_PER_CHOICE
+                        break
             for temp_choice in percent_list:
-                if temp_choice['percent'] < settings.WHITE_RATIO_PER_CHOICE:
+                if (temp_choice['percent'] < settings.WHITE_RATIO_PER_CHOICE or temp_choice['percent'] < (stand_th-0.1)  ) or (stand_th!=0 and temp_choice['percent'] > (stand_th+0.2)):
                     ans_str += temp_choice['choice']
             answer_list.append(ans_str) 
             print percent_list
-                    
-            '''
-             if percent_list[1]['percent'] < settings.WHITE_RATIO_PER_CHOICE and \
-                            abs(percent_list[1]['percent'] - percent_list[0]['percent']) < MAYBE_MULTI_CHOICE_THRESHOLD:
-                print u'第%s排第%s列的作答：可能多涂了选项' % choice_pos
-                print u"第%s排第%s列的作答：%s" % choice_pos_n_ans
-            elif percent_list[0]['percent'] < settings.WHITE_RATIO_PER_CHOICE:
-                # key = (percent_list[0]['row'] - 1) * 3 + percent_list[0]['col']
-                # my_score += 1 if score.get(key) == percent_list[0]['choice'] else 0
-                # print 1 if score.get(key) == percent_list[0]['choice'] else 0
-                print u"第%s排第%s列的作答：%s" % choice_pos_n_ans
-            else:
-                print u"第%s排第%s列的作答：可能没有填涂" % choice_pos
-            '''
+
            
     #print '=====总分========'
     print answer_list
@@ -250,7 +245,7 @@ def get_ave(data):
     return sum / len(data) 
 
 def checkRect(rect1,rect2):
-    th = 6
+    th = 10
     if abs(rect1[0]-rect2[0]) < th and abs(rect1[1] - rect2[1]) < th*2 and abs( \
         rect1[2] - rect2[2])<th and abs(rect1[3]-rect2[3])<th: #位置和大小都匹配
         print 1
@@ -300,7 +295,7 @@ def sort_by_row_hs2(cnts_pos):
     choice_maigins = []
     question_margins = []
     choice_maigin_y= []
-    
+    rows = []
     for i,pos  in enumerate(cnts_pos[1:]):
         if abs(pos[1] - cnts_pos[i][1])<5:
             temp_row.append(pos)
@@ -313,13 +308,42 @@ def sort_by_row_hs2(cnts_pos):
                     else:
                         choice_maigins.append(pos2[0]-temp_row[j][0]-temp_row[j][2])
             queues.extend(temp_row)
+            rows.append(temp_row)
             temp_row = [pos] ## 不一定是第一个因为没有排序
             choice_maigin_y.append(pos[1]-queues[-1][1])
+    temp_row = sorted(temp_row,key=lambda x:x[0])#排序后放入
     queues.extend(temp_row) 
-    # 选项之间左右的间距，题目之间左右的间距，选项之间的上下间距        
+    rows.append(temp_row)
+    if len(question_margins)==0 or len(choice_maigins)==0 or len(choice_maigin_y)==0:
+        print "修复失败"
+    
+    '''
+     if len(question_margins) == 0 and len(choice_maigins) == 0:# 可能一行完整的数据都没有找到,从rows里面寻找上下间距的值
+        for i, row in enumerate(rows[1:]):
+            choice_maigin_y.append(get_ave([x[1] for x in row]) - get_ave([x[1] for x in rows[i]]))# 计算两行间隙
+    '''            
+    # 选项之间左右的间距，题目之间左右的间距，选项之间的上下间距
+    
+    '''
+    if len(choice_maigins) >0:
+        choice_margin_x = get_median(choice_maigins)
+    else:
+        choice_margin_x = 21
+    
+    if len(question_margins)>0:
+        question_margin_x = get_median(choice_maigins)
+    else:
+        question_margin_x = 137
+        
+    if len(choice_maigin_y) > 0:
+        question_margin_y = get_ave(choice_maigin_y)
+    else:
+        question_margin_y = 135
+    '''
     choice_margin_x =  get_median(choice_maigins)
     question_margin_x = get_median(question_margins)
-    question_margin_y = get_ave(choice_maigin_y)#get_median(choice_maigin_y)
+    question_margin_y = get_ave(choice_maigin_y)
+    
     #宽度和高度
     cell_height = get_median([x[3] for x in queues])
     cell_width = get_median([x[2] for x in queues])
@@ -329,7 +353,7 @@ def sort_by_row_hs2(cnts_pos):
     insert_cnt = 0        
     ## 算法一    
     i = 0
-    while i+ insert_cnt < settings.CHOICE_CNT_COUNT -1 and i < len(queues):
+    while i+ insert_cnt < settings.CHOICE_CNT_COUNT and i < len(queues):
         if (len(final_queue) >0):
             last_rect = final_queue[-1]
         else:
@@ -354,11 +378,9 @@ def sort_by_row_hs2(cnts_pos):
             final_queue.append(expect_rect)
             #final_queue.append(queues[i])
             insert_cnt += 1
-       
-        
     if len(final_queue) != settings.CHOICE_CNT_COUNT:
         print "题目数量检测错误"
-        exit
+        exit()
     ##对最后的队列进行分行
    
     choice_row_count = get_choice_row_count()

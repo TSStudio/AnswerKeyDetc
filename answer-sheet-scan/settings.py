@@ -27,13 +27,13 @@ SHEET_AREA_MIN_RATIO = 0.5
 ANS_IMG_THRESHOLD = (109, 255) #之前是 80
 
 # 识别所涂写区域时的膨胀参数
-ANS_IMG_DILATE_ITERATIONS = 2
+ANS_IMG_DILATE_ITERATIONS = 1
 
 # 识别所涂写区域时的腐蚀参数
-ANS_IMG_ERODE_ITERATIONS = 1
+ANS_IMG_ERODE_ITERATIONS = 2
 
 # 识别所涂写区域时的膨胀腐蚀的kernel
-ANS_IMG_KERNEL = np.ones((3, 3), np.uint8)
+ANS_IMG_KERNEL = np.ones((4, 4), np.uint8)
 
 # 识别所有选项框区域时的二值化参数
 CHOICE_IMG_THRESHOLD = (100, 300)

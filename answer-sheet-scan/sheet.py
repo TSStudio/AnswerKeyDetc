@@ -4,7 +4,7 @@ import os
 import cv2
 from imutils import contours
 from e import ContourCountError, ContourPerimeterSizeError, PolyNodeCountError
-
+import numpy as np
 import settings
 #from settings import ANS_IMG_THRESHOLD, CNT_PERIMETER_THRESHOLD, CHOICE_IMG_THRESHOLD, ANS_IMG_DILATE_ITERATIONS, \
 #    ANS_IMG_ERODE_ITERATIONS, CHOICE_IMG_DILATE_ITERATIONS, CHOICE_IMG_ERODE_ITERATIONS, CHOICE_MAX_AREA, \
@@ -33,11 +33,13 @@ def get_choice_area(areas):
     segments = []
     segment_areas = []
     for i, c in enumerate(areas[1:]):
-        if abs(c-areas[i]) < 300:   
+        #print c
+        if abs(c-areas[i]) < 200:   
             segment_areas.append(areas[i])
         else:
             segments.append(segment_areas)
             segment_areas = []
+    segments.append(segment_areas)
     temp = segments[0]      
     for array in segments:
         if len(array) > len(temp) or len(temp)> 250:#小于250
@@ -82,6 +84,7 @@ def get_answer_from_sheet(base_img):
     # 根据计算的多边形顶点继续处理图片，主要是是纠偏
     processed_img = detect_cnt_again(poly_node_list, base_img)
     #保存纠正图片
+    #processed_img = cv2.dilate(processed_img, kernel, iterations=1)    
     wait_draw = processed_img.copy()
     cv2.imwrite(obj_dir+"/"+'correct-position.png', processed_img)
     # 调整图片的亮度
@@ -91,17 +94,19 @@ def get_answer_from_sheet(base_img):
     #processed_img = processed_img[processed_img[1]+20:(processed_img[1] + processed_img[3]-20), processed_img[0]+20:(processed_img[0] + processed_img[2]-20)]
     # 通过二值化和膨胀腐蚀获得填涂区域
     #ans_img = cv2.adaptiveThreshold(processed_img,255,cv2.ADAPTIVE_THRESH_MEAN_C,cv2.THRESH_BINARY,35,2)  
-    #ret, ans_img = cv2.threshold(processed_img,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU) #新的方法  
+    #ret, ans_img = cv2.threshold(processed_img,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU) #新的方法 
     #ans_img = cv2.dilate(processed_img, settings.ANS_IMG_KERNEL, iterations=settings.ANS_IMG_DILATE_ITERATIONS)
-    ans_img = cv2.erode(processed_img, settings.ANS_IMG_KERNEL, iterations=settings.ANS_IMG_ERODE_ITERATIONS) 
-    ans_img = cv2.adaptiveThreshold(ans_img,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,cv2.THRESH_BINARY,45,1) 
+    #ans_img = cv2.erode(ans_img, settings.ANS_IMG_KERNEL, iterations=settings.ANS_IMG_ERODE_ITERATIONS)
+    ans_img = cv2.morphologyEx(processed_img, cv2.MORPH_CLOSE, settings.ANS_IMG_KERNEL)
+    
+    ans_img = cv2.adaptiveThreshold(ans_img,255,cv2.ADAPTIVE_THRESH_MEAN_C,cv2.THRESH_BINARY,45,1) 
     cv2.imwrite(obj_dir+"/"+'answer_area.png', ans_img)
     
     # 通过二值化和膨胀腐蚀获得选项框区域
     #choice_img = cv2.adaptiveThreshold(processed_img,255,cv2.ADAPTIVE_THRESH_MEAN_C,cv2.THRESH_BINARY_INV,35,2) 
     #ret, choice_img = cv2.threshold(processed_img,0,255,cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)#新方法
     #choice_img = cv2.dilate(processed_img, settings.CHOICE_IMG_KERNEL, iterations=settings.CHOICE_IMG_DILATE_ITERATIONS)
-    choice_img = cv2.erode(processed_img, settings.CHOICE_IMG_KERNEL, iterations=settings.CHOICE_IMG_ERODE_ITERATIONS)
+    #choice_img = cv2.erode(processed_img, settings.CHOICE_IMG_KERNEL, iterations=settings.CHOICE_IMG_ERODE_ITERATIONS)
     choice_img = cv2.adaptiveThreshold(processed_img,255,cv2.ADAPTIVE_THRESH_MEAN_C,cv2.THRESH_BINARY_INV,11,2)
     #choice_img = cv2.morphologyEx(choice_img,cv2.MORPH_GRADIENT,settings.ANS_IMG_KERNEL)
    
@@ -127,23 +132,19 @@ def get_answer_from_sheet(base_img):
         if CHOICE_MIN_AREA < cnts_areas[i]< CHOICE_MAX_AREA \
             and ((w/h<=1 and h/w <2) or (w/h>1 and w/h <2)):
             question_cnts.append(c)
-            #print c;
-            #print "%d %d" %(w,h)
             
-        
     cv2.drawContours(wait_draw, question_cnts, -1, (0, 0, 255), 1)
     cv2.imshow("img", wait_draw)  
     cv2.waitKey(0)
     cv2.imwrite(obj_dir+"/"+'wait_draw5.png', wait_draw)
     cv2.waitKey(0)    
     
-    #if len(question_cnts) != settings.CHOICE_CNT_COUNT:
-    #    print "数目错误 %d %d" %(len(question_cnts),settings.CHOICE_CNT_COUNT)
-    #    exit()    
+    if len(question_cnts) < settings.CHOICE_CNT_COUNT/2:
+        print "数目错误 %d %d" %(len(question_cnts),settings.CHOICE_CNT_COUNT)
+        exit()    
     #对轮廓之上而下的排序
     question_cnts, cnts_pos = contours.sort_contours(question_cnts, method="left-to-right")
     question_cnts, cnts_pos = contours.sort_contours(question_cnts, method="top-to-bottom")
-   
     rows = sort_by_row_hs2(list(cnts_pos))
     get_ans(ans_img, rows)
 
