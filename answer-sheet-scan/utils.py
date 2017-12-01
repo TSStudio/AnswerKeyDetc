@@ -325,31 +325,37 @@ def sort_by_row_hs2(cnts_pos):
     cell_width = get_median([x[2] for x in queues])
     #3.对队列里面的值有效性和完整性进行判断和修复
     
-    final_rows = []
-    insert_cnt = 0
-    first_cell = queues[0]
-    if checkRect(first_cell, (min_left,min_top,cell_width,cell_height)) == 1:
-        final_queue = [first_cell]
-    else:
-        final_queue = [(min_left,min_top,cell_width,cell_height)] #自己补全第一个
-    for i,pos in enumerate(queues[1:]):
-        last_rect = final_queue[-1]#取队列里面倒数第一个
-        if (i+1+insert_cnt) % settings.CHOICE_COL_COUNT == 0 and (i+insert_cnt) > 1:# 一行第一个元素
+    final_queue = []
+    insert_cnt = 0        
+    ## 算法一    
+    i = 0
+    while i+ insert_cnt < settings.CHOICE_CNT_COUNT -1 and i < len(queues):
+        if (len(final_queue) >0):
+            last_rect = final_queue[-1]
+        else:
+            last_rect = queues[0]
+        if i == 0: #第一个选项
+            print '++++++' + str(i)
+            expect_rect =  (min_left,min_top,cell_width,cell_height) #预估计矩形
+        elif (i+insert_cnt) % settings.CHOICE_COL_COUNT == 0 and (i+insert_cnt) > 1:# 非一行第一个元素
             print '----' + str(i)
             expect_rect = (min_left,last_rect[1]+question_margin_y,cell_width,cell_height) #预估计矩形
-        elif (i+1+insert_cnt) % settings.CHOICES_PER_QUE == 0 and (i+1+insert_cnt)% settings.CHOICE_COL_COUNT <> 0 : # 相邻的问题
+        elif (i+insert_cnt) % settings.CHOICES_PER_QUE == 0 and (i+insert_cnt)% settings.CHOICE_COL_COUNT <> 0 : # 相邻的问题
             print '======' + str(i)
             expect_rect = (last_rect[0]+last_rect[2]+question_margin_x,last_rect[1],cell_width,cell_height) #预估计矩形 
         else:
             print '-=-=-=' + str(i)
-            expect_rect = (last_rect[0]+last_rect[2]+choice_margin_x,last_rect[1],cell_width,cell_height)
-        check_result = checkRect(expect_rect,pos)    
+            expect_rect = (last_rect[0]+last_rect[2]+choice_margin_x,last_rect[1],cell_width,cell_height)#同一个问题相邻的选项
+        check_result = checkRect(expect_rect,queues[i])    
         if check_result == 1 or check_result == 3:
-            final_queue.append(pos)
-        elif check_result == 2:
+            final_queue.append(queues[i])
+            i = i + 1   
+        elif check_result == 2:#这里没有考虑连续缺失的情况
             final_queue.append(expect_rect)
-            final_queue.append(pos)
+            #final_queue.append(queues[i])
             insert_cnt += 1
+       
+        
     if len(final_queue) != settings.CHOICE_CNT_COUNT:
         print "题目数量检测错误"
         exit
@@ -358,11 +364,9 @@ def sort_by_row_hs2(cnts_pos):
     choice_row_count = get_choice_row_count()
     count = 0
     rows = []
-    #print type(cnts_pos[0])
     threshold = get_min_row_interval(final_queue)
     for i in range(choice_row_count):
         cols = final_queue[i * settings.CHOICE_COL_COUNT - count:(i + 1) * settings.CHOICE_COL_COUNT - count]
-        # threshold = _std_plus_mean(cols)
         temp_row = [cols[0]]
         for j, col in enumerate(cols[1:]):
             temp_row.append(col)
