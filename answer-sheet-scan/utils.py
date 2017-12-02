@@ -161,6 +161,32 @@ def get_ans(ans_img, rows):
     answer_list = []
     stand_th = 0
     last_white = 0;
+    all_percents = []
+    for i,row in enumerate(rows):
+        for k in range(len(row)/settings.CHOICES_PER_QUE):
+            for j, c in enumerate(row[k * interval:interval + k * interval]):
+                new = ans_img[c[1]:(c[1] + c[3]), c[0]:(c[0] + c[2])]
+                white_count = np.count_nonzero(new)
+                percent = white_count * 1.0 / new.size 
+                all_percents.append(percent)                
+    all_percents.sort()
+    stand_th_low = 0
+    stand_th_up = 0
+    for i,p in enumerate(all_percents[1:]):
+        if p - all_percents[i] > 0.1:
+            if stand_th_low == 0:
+                stand_th_low = p
+            elif stand_th_up ==0:
+                stand_th_up = p
+            else:
+                break
+    if stand_th_up == 0:
+        if all_percents[-1]-stand_th_low >0.1:
+            stand_th_up = stand_th_low+0.1
+        else:
+            stand_th_up = all_percents[-1]
+            
+        
     for i, row in enumerate(rows):
         # 从左到右为当前题目的气泡轮廓排序，然后初始化被涂画的气泡变量
         for k in range(len(row)/settings.CHOICES_PER_QUE):
@@ -178,14 +204,15 @@ def get_ans(ans_img, rows):
                 percent_list.append({'col': k + 1, 'row': i + 1, 'percent': percent, 'choice': settings.CHOICES[j]})
 
             #percent_list.sort(key=lambda x: x['percent'])
-            temp_percent_list = percent_list[:];
-            temp_percent_list.sort(key=lambda x: x['percent'])
-            temp_percent_list.reverse()
+            #temp_percent_list = percent_list[:];
+            #temp_percent_list.sort(key=lambda x: x['percent'])
+            #temp_percent_list.reverse()
             
             choice_pos_n_ans = (percent_list[0]['row'], percent_list[0]['col'], percent_list[0]['choice'])
             choice_pos = (percent_list[0]['row'], percent_list[0]['col'])
             ans_str = ""
-            for i,x in enumerate(temp_percent_list[1:]):
+            '''
+             for i,x in enumerate(temp_percent_list[1:]):
                 if temp_percent_list[i]['percent'] - x['percent'] > 0.04: 
                     if stand_th == 0:
                         stand_th = temp_percent_list[i]['percent']#标准的没有填涂
@@ -193,8 +220,11 @@ def get_ans(ans_img, rows):
                     if last_white == 0 or abs(settings.WHITE_RATIO_PER_CHOICE-last_white) < 0.02:
                         last_white = settings.WHITE_RATIO_PER_CHOICE
                         break
+            '''
+           
             for temp_choice in percent_list:
-                if (temp_choice['percent'] < settings.WHITE_RATIO_PER_CHOICE or temp_choice['percent'] < (stand_th-0.1)  ) or (stand_th!=0 and temp_choice['percent'] > (stand_th+0.2)):
+                if temp_choice['percent'] <stand_th_low or temp_choice['percent']>stand_th_up:
+                #if (temp_choice['percent'] < settings.WHITE_RATIO_PER_CHOICE or temp_choice['percent'] < (stand_th-0.1)  ) or (stand_th!=0 and temp_choice['percent'] > (stand_th+0.2)):
                     ans_str += temp_choice['choice']
             answer_list.append(ans_str) 
             print percent_list
