@@ -215,7 +215,7 @@ def get_ans(ans_img, rows):
                 elif stand_th_low == 0 and temp_choice['percent'] < settings.WHITE_RATIO_PER_CHOICE:
                     ans_str += temp_choice['choice']
             answer_list.append(ans_str) 
-            print percent_list
+            #print percent_list
 
            
     #print '=====总分========'
@@ -266,14 +266,14 @@ def checkRect(rect1,rect2):
     th = 10
     if abs(rect1[0]-rect2[0]) < th and abs(rect1[1] - rect2[1]) < th*2 and abs( \
         rect1[2] - rect2[2])<th and abs(rect1[3]-rect2[3])<th: #位置和大小都匹配
-        print 1
+        #print 1
         return 1
     elif abs(rect1[2]-rect2[2]) < th and abs(rect1[3]- rect2[3])< th and abs(\
         rect1[1]-rect2[1])<th:# 在同一个水平线上，但是间距不对，中间可能有遗漏
-        print 2
+        #print 2
         return 2
     else:
-        print 3
+        #print 3
         return 3
     
 
@@ -334,7 +334,7 @@ def sort_by_row_hs2(cnts_pos):
     rows.append(temp_row)
     if len(question_margins)==0 or len(choice_maigins)==0 or len(choice_maigin_y)==0:
         print "修复失败"
-    
+        exit()
     '''
      if len(question_margins) == 0 and len(choice_maigins) == 0:# 可能一行完整的数据都没有找到,从rows里面寻找上下间距的值
         for i, row in enumerate(rows[1:]):
@@ -377,16 +377,16 @@ def sort_by_row_hs2(cnts_pos):
         else:
             last_rect = queues[0]
         if i == 0: #第一个选项
-            print '++++++' + str(i)
+            #print '++++++' + str(i)
             expect_rect =  (min_left,min_top,cell_width,cell_height) #预估计矩形
         elif (i+insert_cnt) % settings.CHOICE_COL_COUNT == 0 and (i+insert_cnt) > 1:# 非一行第一个元素
-            print '----' + str(i)
+            #print '----' + str(i)
             expect_rect = (min_left,last_rect[1]+question_margin_y,cell_width,cell_height) #预估计矩形
         elif (i+insert_cnt) % settings.CHOICES_PER_QUE == 0 and (i+insert_cnt)% settings.CHOICE_COL_COUNT <> 0 : # 相邻的问题
-            print '======' + str(i)
+            #print '======' + str(i)
             expect_rect = (last_rect[0]+last_rect[2]+question_margin_x,last_rect[1],cell_width,cell_height) #预估计矩形 
         else:
-            print '-=-=-=' + str(i)
+            #print '-=-=-=' + str(i)
             expect_rect = (last_rect[0]+last_rect[2]+choice_margin_x,last_rect[1],cell_width,cell_height)#同一个问题相邻的选项
         check_result = checkRect(expect_rect,queues[i])    
         if check_result == 1 or check_result == 3:
@@ -394,13 +394,11 @@ def sort_by_row_hs2(cnts_pos):
             i = i + 1   
         elif check_result == 2:#这里没有考虑连续缺失的情况
             final_queue.append(expect_rect)
-            #final_queue.append(queues[i])
             insert_cnt += 1
     if len(final_queue) != settings.CHOICE_CNT_COUNT:
         print "题目数量检测错误"
         exit()
     ##对最后的队列进行分行
-   
     choice_row_count = get_choice_row_count()
     count = 0
     rows = []
